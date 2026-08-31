@@ -121,8 +121,12 @@ async def cmd_start(message: Message, state: FSMContext):
         "Пожалуйста, выберите язык для прохождения теста:"
     )
     if os.path.exists(LOGO_PATH):
-        photo = FSInputFile(LOGO_PATH)
-        await message.answer_photo(photo, caption=welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
+        try:
+            photo = FSInputFile(LOGO_PATH)
+            await message.answer_photo(photo, caption=welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Rasm yuklashda xatolik, matn ko'rinishida yuborilmoqda: {e}")
+            await message.answer(welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
     else:
         await message.answer(welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
 
@@ -490,8 +494,12 @@ async def send_stage2_question(chat_id: int, state: FSMContext):
     img_path = find_image_path(img_rel_path)
     
     if img_path and os.path.exists(img_path):
-        photo = FSInputFile(img_path)
-        await bot.send_photo(chat_id, photo, caption=caption, reply_markup=keyboards.get_options_kb(len(q["options"]), True, lang), parse_mode="Markdown")
+        try:
+            photo = FSInputFile(img_path)
+            await bot.send_photo(chat_id, photo, caption=caption, reply_markup=keyboards.get_options_kb(len(q["options"]), True, lang), parse_mode="Markdown")
+        except Exception as e:
+            logger.warning(f"Savol rasmini yuklashda xatolik: {e}")
+            await bot.send_message(chat_id, caption, reply_markup=keyboards.get_options_kb(len(q["options"]), True, lang), parse_mode="Markdown")
     else:
         await bot.send_message(chat_id, caption, reply_markup=keyboards.get_options_kb(len(q["options"]), True, lang), parse_mode="Markdown")
 
