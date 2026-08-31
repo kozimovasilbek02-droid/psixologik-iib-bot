@@ -2,9 +2,8 @@
 import sys
 import asyncio
 import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from aiogram.types import Update as TgUpdate
 import uvicorn
 
 import bot as bot_module
@@ -32,36 +31,14 @@ async def health_check():
         "uptime": "24/7 active"
     }
 
-@app.post("/webhook")
-async def telegram_webhook(update: dict):
-    try:
-        telegram_update = TgUpdate.model_validate(update, context={"bot": bot_module.bot})
-        asyncio.create_task(bot_module.dp.feed_update(bot_module.bot, telegram_update))
-    except Exception as e:
-        logger.error(f"Webhook update xatosi: {e}")
-    return {"ok": True}
-
 async def bot_worker():
     await asyncio.sleep(2)
+    logger.info("🤖 Telegram Bot 24/7 doimiy polling rejimida ishga tushmoqda...")
     try:
+        await bot_module.bot.delete_webhook(drop_pending_updates=False)
         await bot_module.setup_bot_commands(bot_module.bot)
-        webhook_base = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("WEBHOOK_URL", "")
-        if webhook_base:
-            wh_url = f"{webhook_base.rstrip('/')}/webhook"
-            await bot_module.bot.set_webhook(wh_url, drop_pending_updates=False)
-            logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {wh_url}")
-        else:
-            logger.info("🤖 Telegram Bot polling rejimida ishlamoqda...")
-            while True:
-                try:
-                    await bot_module.bot.delete_webhook(drop_pending_updates=True)
-                    logger.info("✅ Telegram Bot polling faol!")
-                    await bot_module.dp.start_polling(bot_module.bot)
-                except asyncio.CancelledError:
-                    break
-                except Exception as e:
-                    logger.warning(f"⚠️ Telegram botda xatolik: {e}, 5 soniyada qayta urinmoqda...")
-                    await asyncio.sleep(5)
+        logger.info("✅ Telegram Bot polling faol va xabarlarni qabul qilmoqda!")
+        await bot_module.dp.start_polling(bot_module.bot)
     except Exception as e:
         logger.error(f"Bot worker xatosi: {e}")
 
