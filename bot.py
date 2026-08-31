@@ -747,14 +747,22 @@ async def keep_alive_pinger():
             logger.warning(f"Keep-alive ping ogohlantirish: {e}")
         await asyncio.sleep(600)
 
+async def init_bot_background():
+    await asyncio.sleep(2)
+    try:
+        await setup_bot_commands(bot)
+        webhook_url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
+        if webhook_url:
+            full_url = f"{webhook_url.rstrip('/')}/webhook"
+            await bot.set_webhook(full_url, drop_pending_updates=False)
+            logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_url}")
+    except Exception as e:
+        logger.warning(f"Botni initsializatsiya qilishda ogohlantirish: {e}")
+
 @app.on_event("startup")
 async def on_startup():
-    await setup_bot_commands(bot)
-    webhook_url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
-    if webhook_url:
-        full_url = f"{webhook_url.rstrip('/')}/webhook"
-        await bot.set_webhook(full_url, drop_pending_updates=False)
-        logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_url}")
+    logger.info("🚀 FastAPI server muvaffaqiyatli ishga tushdi!")
+    asyncio.create_task(init_bot_background())
     asyncio.create_task(keep_alive_pinger())
 
 @app.on_event("shutdown")
