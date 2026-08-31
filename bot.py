@@ -719,7 +719,7 @@ async def calculate_and_send_results(chat_id: int, state: FSMContext):
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 
 WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("WEBHOOK_URL", "")
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
 
 async def on_startup(bot: Bot):
     await setup_bot_commands(bot)
