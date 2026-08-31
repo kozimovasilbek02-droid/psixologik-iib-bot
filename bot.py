@@ -714,8 +714,28 @@ async def calculate_and_send_results(chat_id: int, state: FSMContext):
     await state.clear()
 
 # -------------------------------------------------------------
-# WEB SERVER (HEALTHCHECK FOR RENDER 24/7 HOSTING)
+# WEBHOOK & WEB SERVER (FOR 24/7 CLOUD HOSTING)
 # -------------------------------------------------------------
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
+WEBHOOK_PATH = "/webhook"
+WEBHOOK_URL = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("WEBHOOK_URL", "")
+
+async def on_startup(bot: Bot):
+    await setup_bot_commands(bot)
+    if WEBHOOK_URL:
+        full_webhook_url = f"{WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
+        await bot.set_webhook(full_webhook_url, drop_pending_updates=True)
+        logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_webhook_url}")
+    else:
+        logger.info("ℹ️ Webhook URL topilmadi, mahalliy rejim.")
+
+async def on_shutdown(bot: Bot):
+    logger.info("Bot to'xtatilmoqda...")
+    if WEBHOOK_URL:
+        await bot.delete_webhook()
+    await bot.session.close()
+
 async def health_check(request):
     return web.json_response({
         "status": "ok",
@@ -724,38 +744,31 @@ async def health_check(request):
         "uptime": "24/7 active"
     })
 
-async def start_web_server():
+def main():
     port = int(os.environ.get("PORT", 8080))
     app = web.Application()
     app.router.add_get("/", health_check)
     app.router.add_get("/health", health_check)
     
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    await site.start()
-    logger.info(f"🌐 Render Healthcheck server {port}-portda ishga tushdi: http://0.0.0.0:{port}")
-    return runner
-
-# -------------------------------------------------------------
-# BOT ENTRYPOINT
-# -------------------------------------------------------------
-async def main():
-    logger.info("🤖 Telegram Bot ishga tushmoqda...")
-    web_runner = None
-    try:
-        web_runner = await start_web_server()
-    except Exception as e:
-        logger.warning(f"⚠️ Veb-serverni ishga tushirishda ogohlantirish (port band bo'lishi mumkin): {e}")
-        
-    try:
-        await bot.delete_webhook(drop_pending_updates=True)
-        await setup_bot_commands(bot)
-        await dp.start_polling(bot)
-    finally:
-        if web_runner:
-            await web_runner.cleanup()
-        await bot.session.close()
+    if WEBHOOK_URL:
+        # 🌐 Production Webhook Mode on Render
+        webhook_requests_handler = SimpleRequestHandler(
+            dispatcher=dp,
+            bot=bot
+        )
+        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+        dp.startup.register(on_startup)
+        dp.shutdown.register(on_shutdown)
+        setup_application(app, dp, bot=bot)
+        logger.info(f"🚀 Render Webhook server {port}-portda ishga tushmoqda...")
+        web.run_app(app, host="0.0.0.0", port=port)
+    else:
+        # 💻 Local Polling Mode
+        async def run_local():
+            await bot.delete_webhook(drop_pending_updates=True)
+            await setup_bot_commands(bot)
+            await dp.start_polling(bot)
+        asyncio.run(run_local())
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
