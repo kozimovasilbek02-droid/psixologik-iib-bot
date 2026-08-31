@@ -745,7 +745,7 @@ async def health_check(request):
     })
 
 def main():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 10000))
     app = web.Application()
     app.router.add_get("/", health_check)
     app.router.add_get("/health", health_check)
