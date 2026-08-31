@@ -120,15 +120,7 @@ async def cmd_start(message: Message, state: FSMContext):
         "Iltimos, test topshirish uchun qulay til va alifboni tanlang:\n"
         "Пожалуйста, выберите язык для прохождения теста:"
     )
-    if os.path.exists(LOGO_PATH):
-        try:
-            photo = FSInputFile(LOGO_PATH)
-            await message.answer_photo(photo, caption=welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
-        except Exception as e:
-            logger.warning(f"Rasm yuklashda xatolik, matn ko'rinishida yuborilmoqda: {e}")
-            await message.answer(welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
-    else:
-        await message.answer(welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
+    await message.answer(welcome_text, reply_markup=keyboards.get_language_kb(), parse_mode="Markdown")
 
 @dp.message(Command("test"))
 @dp.message(F.text.in_(["🚀 Testni Boshlash", "🚀 Тестни Бошлаш", "🚀 Начать Тестирование"]))
@@ -733,11 +725,10 @@ async def health_check():
     }
 
 @app.post("/webhook")
-async def telegram_webhook(request: Request):
+async def telegram_webhook(update: dict):
     try:
-        data = await request.json()
-        telegram_update = TgUpdate.model_validate(data, context={"bot": bot})
-        await dp.feed_update(bot, telegram_update)
+        telegram_update = TgUpdate.model_validate(update, context={"bot": bot})
+        asyncio.create_task(dp.feed_update(bot, telegram_update))
     except Exception as e:
         logger.error(f"Webhook update xatosi: {e}")
     return {"ok": True}
