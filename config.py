@@ -11,8 +11,8 @@ if sys.platform == "win32":
 from dotenv import load_dotenv
 load_dotenv()
 
-# Telegram Bot Token (BotFather'dan olingan token faqat .env yoki Environment Variable'dan olinadi)
-BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
+# Telegram Bot Token
+BOT_TOKEN = (os.getenv("BOT_TOKEN") or "8965354358:AAED4ap8jOIAjsubcO1CUCjJRQT0Z3VIysc").strip()
 
 # Admin IDs (ixtiyoriy, natijalarni ko'rish uchun)
 ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip().isdigit()]
