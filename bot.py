@@ -733,6 +733,20 @@ async def telegram_webhook(update: dict):
         logger.error(f"Webhook update xatosi: {e}")
     return {"ok": True}
 
+async def keep_alive_pinger():
+    await asyncio.sleep(30)
+    url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
+    health_url = f"{url.rstrip('/')}/health"
+    while True:
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(health_url, timeout=15) as resp:
+                    if resp.status == 200:
+                        logger.info("💓 24/7 Keep-alive self-ping muvaffaqiyatli!")
+        except Exception as e:
+            logger.warning(f"Keep-alive ping ogohlantirish: {e}")
+        await asyncio.sleep(600)
+
 @app.on_event("startup")
 async def on_startup():
     await setup_bot_commands(bot)
@@ -741,6 +755,7 @@ async def on_startup():
         full_url = f"{webhook_url.rstrip('/')}/webhook"
         await bot.set_webhook(full_url, drop_pending_updates=False)
         logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_url}")
+    asyncio.create_task(keep_alive_pinger())
 
 @app.on_event("shutdown")
 async def on_shutdown():
