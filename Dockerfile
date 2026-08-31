@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 10000
 
-CMD ["python", "-u", "bot.py"]
+CMD ["sh", "-c", "uvicorn bot:app --host 0.0.0.0 --port ${PORT:-10000}"]

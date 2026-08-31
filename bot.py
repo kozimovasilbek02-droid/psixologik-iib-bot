@@ -714,56 +714,54 @@ async def calculate_and_send_results(chat_id: int, state: FSMContext):
     await state.clear()
 
 # -------------------------------------------------------------
-# WEBHOOK & WEB SERVER (FOR 24/7 CLOUD HOSTING)
+# FASTAPI & WEBHOOK SERVER (FOR 24/7 CLOUD HOSTING)
 # -------------------------------------------------------------
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from fastapi import FastAPI, Request
+from aiogram.types import Update as TgUpdate
+import uvicorn
 
-WEBHOOK_PATH = "/webhook"
-WEBHOOK_URL = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
+app = FastAPI(title="Psixologik IIB Bot")
 
-async def on_startup(bot: Bot):
-    await setup_bot_commands(bot)
-    if WEBHOOK_URL:
-        full_webhook_url = f"{WEBHOOK_URL.rstrip('/')}{WEBHOOK_PATH}"
-        await bot.set_webhook(full_webhook_url, drop_pending_updates=True)
-        logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_webhook_url}")
-    else:
-        logger.info("ℹ️ Webhook URL topilmadi, mahalliy rejim.")
-
-async def on_shutdown(bot: Bot):
-    logger.info("Bot to'xtatilmoqda...")
-    if WEBHOOK_URL:
-        await bot.delete_webhook()
-    await bot.session.close()
-
-async def health_check(request):
-    return web.json_response({
+@app.get("/")
+@app.get("/health")
+async def health_check():
+    return {
         "status": "ok",
         "bot": "@psixologikIIBbot",
         "service": "Psixologik Test Platformasi Telegram Boti",
         "uptime": "24/7 active"
-    })
+    }
+
+@app.post("/webhook")
+async def telegram_webhook(request: Request):
+    try:
+        data = await request.json()
+        telegram_update = TgUpdate.model_validate(data, context={"bot": bot})
+        await dp.feed_update(bot, telegram_update)
+    except Exception as e:
+        logger.error(f"Webhook update xatosi: {e}")
+    return {"ok": True}
+
+@app.on_event("startup")
+async def on_startup():
+    await setup_bot_commands(bot)
+    webhook_url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "https://psixologik-iib-bot.onrender.com"
+    if webhook_url:
+        full_url = f"{webhook_url.rstrip('/')}/webhook"
+        await bot.set_webhook(full_url, drop_pending_updates=False)
+        logger.info(f"🌐 Telegram Webhook muvaffaqiyatli o'rnatildi: {full_url}")
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    await bot.session.close()
 
 def main():
     port = int(os.environ.get("PORT", 10000))
-    app = web.Application()
-    app.router.add_get("/", health_check)
-    app.router.add_get("/health", health_check)
-    
-    if WEBHOOK_URL:
-        # 🌐 Production Webhook Mode on Render
-        webhook_requests_handler = SimpleRequestHandler(
-            dispatcher=dp,
-            bot=bot
-        )
-        webhook_requests_handler.register(app, path=WEBHOOK_PATH)
-        dp.startup.register(on_startup)
-        dp.shutdown.register(on_shutdown)
-        setup_application(app, dp, bot=bot)
-        logger.info(f"🚀 Render Webhook server {port}-portda ishga tushmoqda...")
-        web.run_app(app, host="0.0.0.0", port=port)
+    webhook_url = os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("PORT")
+    if webhook_url:
+        logger.info(f"🚀 FastAPI Webhook server {port}-portda ishga tushmoqda...")
+        uvicorn.run("bot:app", host="0.0.0.0", port=port)
     else:
-        # 💻 Local Polling Mode
         async def run_local():
             await bot.delete_webhook(drop_pending_updates=True)
             await setup_bot_commands(bot)
