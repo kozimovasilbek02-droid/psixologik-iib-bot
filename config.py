@@ -8,8 +8,8 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-# Telegram Bot Token (BotFather'dan olingan token)
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8965354358:AAHICP0nKf2l1KApVgfndMjbF5PV5tGFMjk")
+# Telegram Bot Token (BotFather'dan olingan token faqat .env yoki Environment Variable'dan olinadi)
+BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
 # Admin IDs (ixtiyoriy, natijalarni ko'rish uchun)
 ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip().isdigit()]
