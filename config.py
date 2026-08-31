@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Telegram Bot Token
-BOT_TOKEN = (os.getenv("BOT_TOKEN") or "8965354358:AAED4ap8jOIAjsubcO1CUCjJRQT0Z3VIysc").strip()
+BOT_TOKEN = (os.getenv("BOT_TOKEN") or "8965354358:AAGwzOhzKqPyVP1tilLqgP7EjLGEDOBq1_A").strip()
 
 # Admin IDs (ixtiyoriy, natijalarni ko'rish uchun)
 ADMIN_IDS = [int(x.strip()) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip().isdigit()]
