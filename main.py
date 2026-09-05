@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import asyncio
 import logging
@@ -33,6 +33,9 @@ async def health_check():
 
 async def bot_worker():
     await asyncio.sleep(2)
+    if not config.BOT_TOKEN or "Placeholder" in str(bot_module.bot.token):
+        logger.error("❌ BOT_TOKEN topilmadi! Iltimos, Render.com da Environment Variables bo'limiga BOT_TOKEN kalitini qo'shing.")
+        return
     logger.info("🤖 Telegram Bot 24/7 doimiy polling rejimida ishga tushmoqda...")
     try:
         await bot_module.bot.delete_webhook(drop_pending_updates=False)

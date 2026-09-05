@@ -45,11 +45,12 @@ if "PYTHONANYWHERE_DOMAIN" in os.environ or "PYTHONANYWHERE_SITE" in os.environ 
     proxy_url = "http://proxy.server:3128"
     logger.info(f"🌐 PythonAnywhere Proxy ishlatilmoqda: {proxy_url}")
 
+bot_token_value = config.BOT_TOKEN or "123456789:AAPlaceholderTokenSetupEnvironmentVariable"
 if proxy_url:
     session = AiohttpSession(proxy=proxy_url)
-    bot = Bot(token=config.BOT_TOKEN, session=session)
+    bot = Bot(token=bot_token_value, session=session)
 else:
-    bot = Bot(token=config.BOT_TOKEN)
+    bot = Bot(token=bot_token_value)
 
 dp = Dispatcher(storage=MemoryStorage())
 
